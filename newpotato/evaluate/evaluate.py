@@ -3,6 +3,8 @@ from collections import Counter, defaultdict
 
 from newpotato.datatypes import triplets_to_str
 
+import re
+
 
 class Evaluator:
     def __init__(self):
@@ -30,6 +32,26 @@ class Evaluator:
             c["fp"] += len(pred_set - gold_set)
             if gold_set == pred_set:
                 c["docs_corr"] += 1
+            
+            #golds_idx = {(t.pred, t.args) for t, positive in gold_set}
+            #preds_idx = {(sorted(list({(t.pred, t.args) for t in pred_set}),key=lambda x: len(x[0])))[-1]}
+            
+            #logging.debug(f"gold_idx: {golds_idx}, preds_idx: {pred_idx}")
+                
+            #gold_eval = set(list(golds_idx)[0][0]) if len(list(golds_idx)) > 0 else set()
+            #pred_eval = set(list(preds_idx)[0][0]) if len(list(preds_idx)) > 0 else set()
+                
+            #logging.debug(f"gold: {gold_eval}, pred: {pred_eval}")
+            
+            #c["docs"] += 1
+            #c["gold"] += len(golds_idx)
+            #c["pred"] += len(preds_idx)
+            #c["tp"] += int(gold_eval % pred_eval)
+            #c["fn"] += len(gold_eval - pred_eval)
+            #c["fp"] += len(pred_eval - gold_eval)
+            #if gold_eval == pred_eval:
+                #c["docs_corr"] += 1
+                
         self.counts = c
         self.results = None
 
@@ -89,12 +111,13 @@ class Evaluator:
         res["n_corr"] = c["tp"]
         res["docs_corr"] = c["docs_corr"]
         res["docs_acc"] = c["docs_corr"] / c["docs"]
+        
         if c["pred"] > 0:
             res["precision"] = c["tp"] / c["pred"]
         if c["gold"] > 0:
             res["recall"] = c["tp"] / c["gold"]
-        if res["precision"] > 0 and res["recall"] > 0:
-            res["f"] = self.f1(res["precision"], res["recall"])
+            
+        res["f"] = self.f1(res["precision"], res["recall"])
 
         return res
 
@@ -103,3 +126,5 @@ class Evaluator:
             self.results = self._get_results()
 
         return self.results
+
+

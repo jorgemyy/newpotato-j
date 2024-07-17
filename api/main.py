@@ -5,6 +5,19 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+# +
+import os
+import sys
+
+sys.path.append('/Users/jorgemy/Dropbox/Tu wien/my_tests/newpotato')
+
+#print('PYTHONPATH:', os.getenv('PYTHONPATH'))
+#print('sys.path:', sys.path)
+#print('Current Working Directory:', os.getcwd())
+
+from newpotato.hitl import HITLManager
+# -
+
 from newpotato.datatypes import Triplet
 from newpotato.hitl import HITLManager
 

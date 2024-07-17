@@ -2,8 +2,17 @@ import argparse
 import logging
 import sys
 from collections import defaultdict
+import random
 
 from rich.console import Console
+
+# +
+import os
+import sys
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(project_root)
+# -
 
 from newpotato.datasets.food_disease import load_and_map_fd
 from newpotato.datasets.lsoie import load_and_map_lsoie
@@ -34,6 +43,8 @@ def get_args():
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("-e", "--events_file", default=None, type=str)
     parser.add_argument("-r", "--which_rel", default=None, type=str)
+    parser.add_argument("-tf","--test_file", default=None, type=str)
+    parser.add_argument("-f","--input_folder", default=None, type=str)
     return parser.parse_args()
 
 
@@ -51,28 +62,48 @@ def main():
 
     console = Console()
     extractor = GraphBasedExtractor(default_relation=args.which_rel)
-    logging.info(f"loading gold data from {args.input_file=}...")
+    
+    train_file = args.input_file
+    test_file = args.test_file if args.test_file else train_file
+    
+    if args.input_folder:
+        train_file = f"data/{args.input_folder}/train.csv"
+        test_file = f"data/{args.input_folder}/val.csv"
+    
+    
     if args.data_type == 'fd':
-        gold_data = {
+        logging.info(f"loading train data from {train_file}...")
+        
+        train_data = {
             sen: [(triplet, True) for triplet in triplets]
-            for sen, triplets in load_and_map_fd(args.input_file, extractor, args.which_rel)
+            for sen, triplets in load_and_map_fd(train_file, extractor, args.which_rel)
         }
+
+        logging.info(f"loading test data from {test_file}...")
+        test_data = {
+            sen: [(triplet, True) for triplet in triplets]
+            for sen, triplets in load_and_map_fd(test_file, extractor, args.which_rel)
+        }
+        
     elif args.data_type == 'lsoie':
         gold_data = defaultdict(list)
         for sen, triplet in load_and_map_lsoie(args.input_file, extractor):
             gold_data[sen].append((triplet, True))
+        train_data = gold_data
+        test_data = gold_data
     else:
         raise ValueError(f'unknown data type: {args.data_type}')
-
+      
+    
     # training
     logging.info("training...")
-    extractor.get_rules(gold_data)
+    extractor.get_rules(train_data)
     
     extractor.print_rules(console)
 
     # evaluation
     logging.info("evaluating...")
-    evaluator = ExtractorEvaluator(extractor, gold_data)
+    evaluator = ExtractorEvaluator(extractor, test_data)
 
     results = evaluator.get_results()
     for key, value in results.items():
@@ -83,7 +114,6 @@ def main():
             evaluator.write_events(sys.stdout)
         else:
             evaluator.write_events_to_file(args.events_file)
-
 
 if __name__ == "__main__":
     main()

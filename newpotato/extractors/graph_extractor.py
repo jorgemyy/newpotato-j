@@ -3,6 +3,14 @@ from collections import Counter, defaultdict
 from itertools import chain
 from typing import Any, Dict, List, Optional
 
+# +
+import os
+import sys
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(project_root)
+# -
+
 from newpotato.datatypes import GraphMappedTriplet, Triplet
 from newpotato.extractors.extractor import Extractor
 from newpotato.extractors.graph_parser_client import GraphParserClient
@@ -84,9 +92,9 @@ class GraphBasedExtractor(Extractor):
             logging.debug(graph.to_dot())
             lemmas = self.get_lemmas(text)
             for triplet, positive in triplets:
-                logging.debug(f"{triplet=}")
+                logging.debug(f"triplet: {triplet=}")
                 if triplet.pred is not None:
-                    logging.debug(f"{triplet.pred_graph=}")
+                    logging.debug(f"triplet pred graph: {triplet.pred_graph=}")
                     pred_graphs[triplet.pred_graph] += 1
                     pred_lemmas = tuple(lemmas[i] for i in triplet.pred)
                     triplet_toks = set(chain(triplet.pred, triplet.arg_roots))
@@ -161,6 +169,10 @@ class GraphBasedExtractor(Extractor):
         self.arg_matcher = self._get_matcher_from_graphs(
             self.all_arg_graphs, label="ARG", threshold=1, pos_only=False
         )
+        
+        
+        #logging.debug(f"{self.triplet_graphs.most_common()=}")
+        
         self.triplet_matchers = Counter(
             {
                 (
@@ -232,10 +244,11 @@ class GraphBasedExtractor(Extractor):
         return GraphMappedTriplet(triplet, pred_subgraph, arg_subgraphs)
 
     def _match(self, matcher, sen_graph):
+        logging.info(f"{sen_graph=}")
         for key, i, subgraphs in matcher.match(sen_graph.G, return_subgraphs=True):
             for subgraph in subgraphs:
-                logging.debug(f"MATCH: {sen_graph=}")
-                logging.debug(f"MATCH: {subgraph.graph=}")
+                logging.info(f"MATCH: {sen_graph=}")
+                logging.info(f"MATCH: {subgraph.graph=}")
                 ud_subgraph = sen_graph.subgraph(subgraph.nodes)
                 indices = frozenset(
                     idx
@@ -258,12 +271,18 @@ class GraphBasedExtractor(Extractor):
                 indices: subgraph
                 for indices, subgraph in self._match(self.arg_matcher, sen_graph)
             }
+            logging.info(f"{arg_cands=}")
             arg_roots_to_arg_cands = {
                 arg_graph.root: (indices, arg_graph)
                 for indices, arg_graph in arg_cands.items()
             }
             arg_cand_root_set = set(arg_roots_to_arg_cands.keys())
+            logging.info(f"{arg_cand_root_set=}")
 
+            logging.debug(f"{self.triplet_matchers.most_common()=}")
+            #logging.debug(f"{len(self.triplet_matchers.most_common())=}")
+            #### = number in the train set, there are no duplicates
+            
             for (
                 triplet_matcher,
                 arg_root_indices,
@@ -272,8 +291,12 @@ class GraphBasedExtractor(Extractor):
                 triplet_cands = set(
                     indices for indices in self._match(triplet_matcher, sen_graph)
                 )
+                logging.info(f"{triplet_cands=}")
                 for triplet_cand, triplet_graph in triplet_cands:
                     inferred_nodes = set(triplet_graph.nodes_by_lextop(inferred_node_indices))
+                    logging.debug(f"{inferred_node_indices=}")
+                    logging.debug(f"{inferred_nodes=}")
+                    logging.debug(f"{arg_root_indices=}")
                     arg_roots = triplet_graph.nodes_by_lextop(arg_root_indices)
                     logging.info("==========================")
                     logging.info(f"{triplet_cand=}")
@@ -294,8 +317,9 @@ class GraphBasedExtractor(Extractor):
                                 # we have a winner
                                 if arg_roots_to_cover:
                                     args = [
-                                        arg_roots_to_arg_cands[arg_root][0]
+                                        arg_roots_to_arg_cands[arg_root][0] 
                                         for arg_root in arg_roots
+                                        if arg_root in arg_roots_to_arg_cands
                                     ]
                                 else:
                                     args = []

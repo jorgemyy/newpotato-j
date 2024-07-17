@@ -5,9 +5,9 @@ from collections import defaultdict
 import pandas as pd
 import streamlit as st
 from chat import chat
-from graphbrain import hedge
-from graphbrain.notebook import *  # noqa
-from graphbrain.notebook import _edge2html_vblocks
+#from graphbrain import hedge
+#from graphbrain.notebook import *  # noqa
+#from graphbrain.notebook import _edge2html_vblocks
 from st_cytoscape import cytoscape
 from streamlit_modal import Modal
 from streamlit_text_annotation import text_annotation
@@ -269,10 +269,10 @@ def visualize_kg(knowledge_graph):
                             unsafe_allow_html=True,
                         )
 
-                        edge = hedge(applied_rule)
-                        edge = edge.simplify()
-                        html = _edge2html_vblocks(edge)
-                        st.markdown(html, unsafe_allow_html=True)
+                        #edge = hedge(applied_rule)
+                        #edge = edge.simplify()
+                        #html = _edge2html_vblocks(edge)
+                        # st.markdown(html, unsafe_allow_html=True)
                         # st.write(f"Rule: {rule}")
                     if annotated:
                         st.info("This sentence has been annotated!")

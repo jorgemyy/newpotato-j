@@ -76,10 +76,11 @@ class GraphMappedTriplet(Triplet):
         super(GraphMappedTriplet, self).__init__(
             triplet.pred, triplet.args, toks=triplet.toks
         )
+        
         self.pred_graph = pred_graph
         self.arg_graphs = arg_graphs
         self.mapped = True
-
+        
     @staticmethod
     def from_json(data):
         triplet = Triplet(
@@ -128,3 +129,7 @@ def triplets_to_str(triplets: List[Triplet]) -> List[str]:
         List[str]: the human-readable form of the triplet
     """
     return [str(triplet) for triplet in triplets]
+
+
+
+

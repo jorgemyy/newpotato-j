@@ -33,6 +33,7 @@ def load_fd(input_file):
             row_id,
             food_entity,
             disease_entity,
+            pred,
             sentence,
             disease_doid,
             is_cause,
@@ -44,12 +45,15 @@ def load_fd(input_file):
 
         is_cause, is_treat = bool(is_cause), bool(is_treat)
 
-        yield row_id, sentence, food_entity, disease_entity, is_cause, is_treat
+        yield row_id, sentence, food_entity, disease_entity, pred, is_cause, is_treat
 
 
 def load_and_map_fd(input_file, extractor, which_rel):
+    
+    logging.debug(f"input file: {input_file}")
+    
     assert which_rel in ("CAUSE", "TREAT")
-    for row_id, sentence, food_entity, disease_entity, is_cause, is_treat in load_fd(
+    for row_id, sentence, food_entity, disease_entity, pred, is_cause, is_treat in load_fd(
         input_file
     ):
         text_to_graph = list(extractor.parse_text(sentence))
@@ -68,17 +72,19 @@ def load_and_map_fd(input_file, extractor, which_rel):
         elif not is_treat:
             # no triplets to add
             continue
-
-        pred = None
+            
+        #pred = None
 
         try:
             args = [
                 get_toks_from_txt(untokenize(food_entity), stanza_sen),
                 get_toks_from_txt(untokenize(disease_entity), stanza_sen),
             ]
+            preds = get_toks_from_txt(untokenize(pred),stanza_sen)
+            
         except AnnotatedWordsNotFoundError:
             logging.warning(
-                f"Could not find all words of annotation: {food_entity=}, {disease_entity=}"
+                f"Could not find all words of annotation: {food_entity=}, {disease_entity=}, {pred=}"
             )
             logging.warning("skipping")
             continue
@@ -86,7 +92,7 @@ def load_and_map_fd(input_file, extractor, which_rel):
         logging.debug(f"FoodDisease args from text: {args=}")
 
         triplet = get_triplet_from_annotation(
-            pred, args, sen, graph, extractor, console, ask_user=False
+            preds, args, sen, graph, extractor, console, ask_user=False
         )
         if not triplet.mapped:
             logging.warning(f"unmapped triplet: {row_id=}, {sen=}, {args=}")

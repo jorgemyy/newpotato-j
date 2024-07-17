@@ -7,6 +7,7 @@ from typing import Any, Dict, Generator, List, Optional
 
 from newpotato.datatypes import Triplet
 from newpotato.extractors.extractor import Extractor
+from newpotato.extractors.graph_extractor import GraphBasedExtractor
 
 
 @dataclass
@@ -228,3 +229,7 @@ class HITLManager:
             )
         else:
             yield from sens[:max_n]
+
+
+
+
